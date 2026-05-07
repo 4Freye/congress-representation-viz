@@ -47,6 +47,16 @@ Stdlib only, no `pip install` needed.
 - Historical Congresses
 - Gerrymandering decomposition (efficiency gap, etc.)
 
+## Tests
+
+End-to-end render tests use [Playwright](https://playwright.dev/) against a local `python3 -m http.server`. CI runs them on every push (`.github/workflows/test.yml`).
+
+```sh
+npm install
+npx playwright install chromium
+npm test
+```
+
 ## Deploy (GitHub Pages)
 
 1. Create empty GitHub repo, push `main`.
