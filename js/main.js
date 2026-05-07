@@ -1,7 +1,20 @@
 /* Congress representation deviation map. */
 
-const TOPO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
-const DATA_URL = "data/data.json";
+const TOPO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json?v=2";
+const DATA_URL = "data/data.json?v=2";
+
+function showError(msg) {
+  let banner = document.getElementById("error-banner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "error-banner";
+    banner.style.cssText =
+      "margin:1rem 1.5rem;padding:0.75rem 1rem;border:1px solid #a00;background:#fff0f0;color:#a00;border-radius:6px;font-size:0.9rem;";
+    const main = document.querySelector("main");
+    main.insertBefore(banner, main.firstChild);
+  }
+  banner.textContent = `Map failed to render: ${msg}`;
+}
 
 const fmtPct = d3.format(".1%");
 const fmtSignedPP = (v) => {
@@ -22,6 +35,10 @@ let pinnedFips = null;
 
 Promise.all([d3.json(TOPO_URL), d3.json(DATA_URL)])
   .then(([us, payload]) => {
+   try {
+    if (typeof topojson === "undefined") {
+      throw new Error("topojson library not loaded");
+    }
     const data = payload.states;
     const byFips = {};
     Object.values(data).forEach((d) => (byFips[d.fips] = d));
@@ -86,11 +103,14 @@ Promise.all([d3.json(TOPO_URL), d3.json(DATA_URL)])
         hideTooltip();
       }
     });
+   } catch (err) {
+     console.error(err);
+     showError(err.message);
+   }
   })
   .catch((err) => {
     console.error(err);
-    document.getElementById("map-container").innerHTML =
-      `<p style="color:#a00">Failed to load map data: ${err.message}</p>`;
+    showError(err.message);
   });
 
 function showTooltip(event, d) {

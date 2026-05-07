@@ -32,6 +32,7 @@ header h1 { margin: 1rem 0 0.5rem; font-size: 1.9rem; }
 #map {
   width: 100%;
   height: auto;
+  aspect-ratio: 975 / 610;
   display: block;
 }
 
