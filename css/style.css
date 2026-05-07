@@ -1,0 +1,112 @@
+:root {
+  --dem: #1f6feb;
+  --rep: #d1242f;
+  --bg: #ffffff;
+  --fg: #1c1c1c;
+  --muted: #555;
+  --stroke: #ffffff;
+  --stroke-hover: #1c1c1c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+  line-height: 1.55;
+}
+
+header, main, footer { max-width: 1100px; margin: 0 auto; padding: 1rem 1.5rem; }
+
+header h1 { margin: 1rem 0 0.5rem; font-size: 1.9rem; }
+
+#intro p { margin: 0.6rem 0; }
+#intro .caveats { color: var(--muted); font-size: 0.92rem; }
+#intro .dem { color: var(--dem); font-weight: 600; }
+#intro .rep { color: var(--rep); font-weight: 600; }
+
+#map-container { margin-top: 1rem; }
+
+#map {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+#map path.state {
+  stroke: var(--stroke);
+  stroke-width: 0.75;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+#map path.state:hover,
+#map path.state.pinned {
+  stroke: var(--stroke-hover);
+  stroke-width: 1.5;
+}
+
+#legend {
+  margin: 1rem auto 0;
+  max-width: 600px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.legend-bar {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    to right,
+    #67001f, #b2182b, #d6604d, #f4a582, #fddbc7,
+    #f7f7f7,
+    #d1e5f0, #92c5de, #4393c3, #2166ac, #053061
+  );
+}
+
+.legend-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+}
+
+#tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: rgba(28, 28, 28, 0.95);
+  color: #fff;
+  padding: 0.65rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  max-width: 260px;
+  z-index: 10;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+#tooltip.hidden { display: none; }
+
+#tooltip .ttl { font-weight: 700; font-size: 1rem; margin-bottom: 0.35rem; }
+#tooltip .row { display: flex; justify-content: space-between; gap: 0.75rem; }
+#tooltip .row span:last-child { font-variant-numeric: tabular-nums; }
+#tooltip .sep { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.4rem 0; }
+#tooltip .dev-pos { color: #92c5de; }
+#tooltip .dev-neg { color: #f4a582; }
+#tooltip .note { color: #bbb; font-size: 0.78rem; margin-top: 0.4rem; font-style: italic; }
+
+footer {
+  border-top: 1px solid #eee;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+footer a { color: var(--muted); }
+
+@media (max-width: 600px) {
+  header h1 { font-size: 1.4rem; }
+  #intro p { font-size: 0.95rem; }
+  #tooltip { max-width: 80vw; font-size: 0.82rem; }
+}

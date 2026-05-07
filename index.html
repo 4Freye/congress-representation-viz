@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How Well Does the House Represent Your State?</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <h1>How Well Does the House Represent Your State?</h1>
+  </header>
+
+  <main>
+    <section id="intro">
+      <p>
+        In a perfectly proportional system, the partisan split of a state's delegation
+        in the U.S. House of Representatives would mirror the partisan split of its
+        voters. In practice it doesn't &mdash; because of district lines, geographic
+        sorting, single-member plurality elections, and small delegation sizes.
+      </p>
+      <p>
+        This map shows the <strong>representation deviation</strong> for every state:
+        the difference between the Democratic share of its current House delegation
+        (119th Congress) and the Democratic share of its 2024 presidential two-party
+        vote. <span class="dem">Blue</span> means the delegation is more Democratic
+        than the electorate; <span class="rep">red</span> means it's more Republican;
+        white is roughly proportional. Hover or tap any state for the full breakdown.
+      </p>
+      <p class="caveats">
+        Caveats: presidential vote share is a proxy for partisan lean, not party
+        identification. States with one or two House seats can only land on coarse
+        values (0%, 50%, 100%), so their deviations look extreme even when nothing
+        unusual is happening. Vacant seats and independents are excluded from the
+        delegation share. DC and territories have no voting House representation
+        and are omitted.
+      </p>
+    </section>
+
+    <section id="map-container">
+      <svg id="map" viewBox="0 0 975 610" preserveAspectRatio="xMidYMid meet"></svg>
+      <div id="legend">
+        <div class="legend-bar"></div>
+        <div class="legend-labels">
+          <span>&minus;30pp (more Republican than voters)</span>
+          <span>0</span>
+          <span>+30pp (more Democratic than voters)</span>
+        </div>
+      </div>
+    </section>
+
+    <div id="tooltip" class="hidden"></div>
+  </main>
+
+  <footer>
+    <p>
+      Data: 2024 presidential results aggregated from
+      <a href="https://github.com/tonmcg/US_County_Level_Election_Results_08-24" target="_blank" rel="noopener">tonmcg/US_County_Level_Election_Results</a>;
+      House composition from
+      <a href="https://github.com/unitedstates/congress-legislators" target="_blank" rel="noopener">unitedstates/congress-legislators</a>.
+      State boundaries: <a href="https://github.com/topojson/us-atlas" target="_blank" rel="noopener">us-atlas</a>.
+      Source: <a href="https://github.com/" target="_blank" rel="noopener">GitHub</a>.
+    </p>
+    <p id="generated"></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
