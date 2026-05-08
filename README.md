@@ -70,11 +70,11 @@ Absolute fit returns 1 when the delegation perfectly mirrors the electorate and 
 - The Gallagher metric pairs the voter "other" share (third-party / independent House candidates) with the House "independent" share among seated members. These categories don't perfectly correspond, but the bucket is small enough that the approximation rarely changes the picture.
 - DC and U.S. territories have no voting House representation and are omitted.
 
-## Out of scope (v1)
+<!-- ## Out of scope (v1)
 
 - State legislative chambers (planned)
 - Historical Congresses
-- Gerrymandering decomposition (efficiency gap, etc.)
+- Gerrymandering decomposition (efficiency gap, etc.) -->
 
 ## Tests
 
