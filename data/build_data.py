@@ -1,7 +1,8 @@
 """Build data/data.json from raw inputs.
 
 Inputs (data/raw/):
-  - 2024-pres-county.csv : county-level 2024 presidential results (tonmcg)
+  - 2024-house-state.csv : state-level 2024 U.S. House vote totals
+    (produced by data/aggregate_house_2024.py from MEDSL precinct returns)
   - legislators-current.json : unitedstates/congress-legislators
 
 Output: data/data.json keyed by USPS state code.
@@ -19,21 +20,21 @@ ROOT = Path(__file__).resolve().parent
 RAW = ROOT / "raw"
 OUT = ROOT / "data.json"
 
-STATE_NAME_TO_USPS = {
-    "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR",
-    "California": "CA", "Colorado": "CO", "Connecticut": "CT", "Delaware": "DE",
-    "District of Columbia": "DC", "Florida": "FL", "Georgia": "GA",
-    "Hawaii": "HI", "Idaho": "ID", "Illinois": "IL", "Indiana": "IN",
-    "Iowa": "IA", "Kansas": "KS", "Kentucky": "KY", "Louisiana": "LA",
-    "Maine": "ME", "Maryland": "MD", "Massachusetts": "MA", "Michigan": "MI",
-    "Minnesota": "MN", "Mississippi": "MS", "Missouri": "MO", "Montana": "MT",
-    "Nebraska": "NE", "Nevada": "NV", "New Hampshire": "NH", "New Jersey": "NJ",
-    "New Mexico": "NM", "New York": "NY", "North Carolina": "NC",
-    "North Dakota": "ND", "Ohio": "OH", "Oklahoma": "OK", "Oregon": "OR",
-    "Pennsylvania": "PA", "Rhode Island": "RI", "South Carolina": "SC",
-    "South Dakota": "SD", "Tennessee": "TN", "Texas": "TX", "Utah": "UT",
-    "Vermont": "VT", "Virginia": "VA", "Washington": "WA",
-    "West Virginia": "WV", "Wisconsin": "WI", "Wyoming": "WY",
+USPS_TO_NAME = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
+    "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware",
+    "DC": "District of Columbia", "FL": "Florida", "GA": "Georgia",
+    "HI": "Hawaii", "ID": "Idaho", "IL": "Illinois", "IN": "Indiana",
+    "IA": "Iowa", "KS": "Kansas", "KY": "Kentucky", "LA": "Louisiana",
+    "ME": "Maine", "MD": "Maryland", "MA": "Massachusetts", "MI": "Michigan",
+    "MN": "Minnesota", "MS": "Mississippi", "MO": "Missouri", "MT": "Montana",
+    "NE": "Nebraska", "NV": "Nevada", "NH": "New Hampshire", "NJ": "New Jersey",
+    "NM": "New Mexico", "NY": "New York", "NC": "North Carolina",
+    "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma", "OR": "Oregon",
+    "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
+    "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah",
+    "VT": "Vermont", "VA": "Virginia", "WA": "Washington",
+    "WV": "West Virginia", "WI": "Wisconsin", "WY": "Wyoming",
 }
 
 USPS_TO_FIPS = {
@@ -49,16 +50,20 @@ USPS_TO_FIPS = {
 }
 
 
-def load_pres_state_totals():
-    totals = defaultdict(lambda: {"dem": 0, "rep": 0})
-    with open(RAW / "2024-pres-county.csv", newline="", encoding="utf-8") as f:
+def load_house_state_totals():
+    """Load 2024 U.S. House state-level vote totals produced by aggregate_house_2024.py."""
+    totals = defaultdict(lambda: {"dem": 0, "rep": 0, "other": 0, "total": 0})
+    src = RAW / "2024-house-state.csv"
+    with open(src, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            usps = STATE_NAME_TO_USPS.get(row["state_name"])
-            if not usps:
+            usps = (row.get("state_usps") or "").strip().upper()
+            if usps not in USPS_TO_FIPS:
                 continue
             totals[usps]["dem"] += int(row["votes_dem"])
-            totals[usps]["rep"] += int(row["votes_gop"])
+            totals[usps]["rep"] += int(row["votes_rep"])
+            totals[usps]["other"] += int(row["votes_other"])
+            totals[usps]["total"] += int(row["votes_total"])
     return totals
 
 
@@ -83,37 +88,45 @@ def load_house_119th():
 
 
 def main():
-    pres = load_pres_state_totals()
+    votes = load_house_state_totals()
     house = load_house_119th()
 
     out = {}
-    usps_to_name = {v: k for k, v in STATE_NAME_TO_USPS.items()}
 
     for usps in USPS_TO_FIPS:
         if usps == "DC":
             continue  # no voting House rep
-        p = pres.get(usps, {"dem": 0, "rep": 0})
+        v = votes.get(usps, {"dem": 0, "rep": 0, "other": 0, "total": 0})
         h = house.get(usps, {"dem": 0, "rep": 0, "ind": 0})
 
-        two_party = p["dem"] + p["rep"]
-        citizen_dem = p["dem"] / two_party if two_party else 0.0
-        citizen_rep = p["rep"] / two_party if two_party else 0.0
+        total_votes = v["total"] or (v["dem"] + v["rep"] + v["other"])
+        votes_other = v["other"] if v["other"] else max(total_votes - v["dem"] - v["rep"], 0)
+        house_vote_dem = v["dem"] / total_votes if total_votes else 0.0
+        house_vote_rep = v["rep"] / total_votes if total_votes else 0.0
+        house_vote_other = votes_other / total_votes if total_votes else 0.0
+
+        # 2-party House vote share, parity with 2-party house_dem_share.
+        two_party = v["dem"] + v["rep"]
+        house_vote_dem_2p = v["dem"] / two_party if two_party else 0.0
 
         h_two = h["dem"] + h["rep"]
         house_dem_share = h["dem"] / h_two if h_two else None
         house_rep_share = h["rep"] / h_two if h_two else None
 
         deviation = (
-            house_dem_share - citizen_dem if house_dem_share is not None else None
+            house_dem_share - house_vote_dem_2p if house_dem_share is not None else None
         )
 
         out[usps] = {
-            "name": usps_to_name[usps],
+            "name": USPS_TO_NAME[usps],
             "fips": USPS_TO_FIPS[usps],
-            "citizen_dem": round(citizen_dem, 4),
-            "citizen_rep": round(citizen_rep, 4),
-            "citizen_dem_votes": p["dem"],
-            "citizen_rep_votes": p["rep"],
+            "house_vote_dem": round(house_vote_dem, 4),
+            "house_vote_rep": round(house_vote_rep, 4),
+            "house_vote_other": round(house_vote_other, 4),
+            "house_vote_dem_votes": v["dem"],
+            "house_vote_rep_votes": v["rep"],
+            "house_vote_other_votes": votes_other,
+            "house_vote_total_votes": total_votes,
             "house_dem": h["dem"],
             "house_rep": h["rep"],
             "house_ind": h["ind"],
@@ -126,7 +139,7 @@ def main():
     payload = {
         "generated": date.today().isoformat(),
         "congress": 119,
-        "presidential_year": 2024,
+        "house_election_year": 2024,
         "states": out,
     }
 

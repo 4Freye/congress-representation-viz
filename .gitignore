@@ -10,3 +10,4 @@ playwright-report/
 test-results/
 .playwright/
 .claude
+data/raw/2024-house-precinct.csv

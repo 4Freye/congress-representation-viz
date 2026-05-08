@@ -16,37 +16,86 @@
       <p>
         In a perfectly proportional system, the partisan split of a state's delegation
         in the U.S. House of Representatives would mirror the partisan split of its
-        voters. In practice it doesn't &mdash; because of district lines, geographic
-        sorting, single-member plurality elections, and small delegation sizes.
+        voters. In practice it doesn't &mdash; because of
+        <a href="https://en.wikipedia.org/wiki/Gerrymandering_in_the_United_States" target="_blank" rel="noopener">gerrymandering</a>,
+        geographic sorting, single-member plurality elections, and small delegation sizes.
       </p>
       <p>
-        This map shows the <strong>representation deviation</strong> for every state:
-        the difference between the Democratic share of its current House delegation
-        (119th Congress) and the Democratic share of its 2024 presidential two-party
-        vote. <span class="dem">Blue</span> means the delegation is more Democratic
-        than the electorate; <span class="rep">red</span> means it's more Republican;
-        white is roughly proportional. Hover or tap any state for the full breakdown.
+        Three views of the same question. Switch modes with the toggle below the map.
+      </p>
+      <ul class="mode-list">
+        <li>
+          <strong>Party bias.</strong> Signed difference between the Democratic share
+          of a state's House delegation and its 2024 U.S. House two-party vote.
+          <span class="dem">Blue</span> = more Democratic than voters,
+          <span class="rep">red</span> = more Republican, white = proportional.
+        </li>
+        <li>
+          <strong>Absolute fit.</strong> How close the two-party seat split is to the
+          two-party vote split, ignoring direction. <span class="good">Green</span>
+          = close to proportional, <span class="bad">red</span> = far off.
+        </li>
+        <li>
+          <strong><a href="https://en.wikipedia.org/wiki/Gallagher_index" target="_blank" rel="noopener">Gallagher index</a>.</strong>
+          A standard disproportionality index across Democratic, Republican, and other
+          / independent shares. <span class="good">Green</span> = 0 (perfect),
+          <span class="bad">red</span> = high (worse). Penalises larger gaps more
+          heavily than absolute fit and accounts for third-party voters.
+        </li>
+      </ul>
+      <p>
+        The <strong>seats slider</strong> fades states with small delegations
+        on both the map and the scatter &mdash; a one-seat state can only be 0%
+        or 100% Democratic, so it cannot be proportional by construction. The
+        <strong>scatter</strong> below the map plots one dot per state
+        (delegation size on the x-axis, deviation on the y-axis); switch modes
+        to see how the picture changes. The <strong>national strip</strong> at
+        the very bottom compares the nationwide U.S. House vote split with the
+        nationwide House seat split.
       </p>
       <p class="caveats">
-        Caveats: presidential vote share is a proxy for partisan lean, not party
-        identification. States with one or two House seats can only land on coarse
-        values (0%, 50%, 100%), so their deviations look extreme even when nothing
-        unusual is happening. Vacant seats and independents are excluded from the
-        delegation share. DC and territories have no voting House representation
-        and are omitted.
+        Caveats: uncontested districts (where one major party has no candidate
+        on the ballot) skew the state's two-party House vote and exaggerate the
+        winner's share. Vacant seats are not counted toward a state's delegation
+        size. DC and territories have no voting House representation and are
+        omitted.
       </p>
     </section>
 
     <section id="map-container">
+      <div id="controls">
+        <div class="control-group" role="radiogroup" aria-label="Metric mode">
+          <button type="button" class="mode-btn is-active" data-mode="bias">Party bias</button>
+          <button type="button" class="mode-btn" data-mode="abs">Absolute fit</button>
+          <button type="button" class="mode-btn" data-mode="gallagher">Gallagher index</button>
+        </div>
+        <div class="control-group slider-group">
+          <label for="seats-slider">Fade states with fewer than
+            <input type="number" id="seats-number" min="1" max="60" step="1" value="1" aria-label="Exact seat threshold" />
+            seat<span id="seats-plural"></span>
+          </label>
+          <input type="range" id="seats-slider" min="0" max="0" step="1" value="0" />
+        </div>
+      </div>
       <svg id="map" viewBox="0 0 975 610" preserveAspectRatio="xMidYMid meet"></svg>
       <div id="legend">
         <div class="legend-bar"></div>
         <div class="legend-labels">
-          <span>&minus;30pp (more Republican than voters)</span>
-          <span>0</span>
-          <span>+30pp (more Democratic than voters)</span>
+          <span class="legend-min">&minus;30pp (more Republican than voters)</span>
+          <span class="legend-mid">0</span>
+          <span class="legend-max">+30pp (more Democratic than voters)</span>
         </div>
       </div>
+    </section>
+
+    <section id="scatter-section">
+      <h2>State-by-state</h2>
+      <svg id="scatter" viewBox="0 0 700 380" preserveAspectRatio="xMidYMid meet"></svg>
+    </section>
+
+    <section id="national-section">
+      <h2>National picture</h2>
+      <svg id="national-bar" viewBox="0 0 600 90" preserveAspectRatio="xMidYMid meet"></svg>
     </section>
 
     <div id="tooltip" class="hidden"></div>
@@ -54,8 +103,9 @@
 
   <footer>
     <p>
-      Data: 2024 presidential results aggregated from
-      <a href="https://github.com/tonmcg/US_County_Level_Election_Results_08-24" target="_blank" rel="noopener">tonmcg/US_County_Level_Election_Results</a>;
+      Data: 2024 U.S. House precinct-level returns from
+      <a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/USBYR4" target="_blank" rel="noopener">MEDSL / Harvard Dataverse (doi:10.7910/DVN/USBYR4)</a>,
+      aggregated to state level;
       House composition from
       <a href="https://github.com/unitedstates/congress-legislators" target="_blank" rel="noopener">unitedstates/congress-legislators</a>.
       State boundaries: <a href="https://github.com/topojson/us-atlas" target="_blank" rel="noopener">us-atlas</a>.
