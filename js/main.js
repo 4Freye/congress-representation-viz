@@ -417,7 +417,6 @@ function wireControls() {
 
   const slider = document.getElementById("seats-slider");
   const numberInput = document.getElementById("seats-number");
-  const pluralEl = document.getElementById("seats-plural");
 
   slider.min = 0;
   slider.max = breakpoints.length - 1;
@@ -427,7 +426,6 @@ function wireControls() {
   numberInput.max = breakpoints[breakpoints.length - 1];
 
   function applyThreshold() {
-    pluralEl.textContent = seatThreshold === 1 ? "" : "s";
     svg.selectAll("path.state").classed("muted", function () {
       const d = byFips[this.getAttribute("data-fips")];
       return d ? d.house_total < seatThreshold : false;
