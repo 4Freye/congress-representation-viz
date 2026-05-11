@@ -20,7 +20,7 @@ const fmtPct = d3.format(".1%");
 const fmtSignedPP = (v) => {
   const pp = v * 100;
   const sign = pp > 0 ? "+" : pp < 0 ? "−" : "";
-  return `${sign}${Math.abs(pp).toFixed(1)} pp`;
+  return `${sign}${Math.abs(pp).toFixed(1)}%`;
 };
 const fmtFit = (v) => v.toFixed(3);
 
@@ -47,7 +47,7 @@ const MODES = {
     domain: [-0.3, 0.3],
     yLabel: "House Dem share − citizen Dem share (pp)",
     legendClass: "",
-    legendLabels: ["−30pp (more Republican than voters)", "0", "+30pp (more Democratic than voters)"],
+    legendLabels: ["−30% (more Republican than voters)", "0", "+30% (more Democratic than voters)"],
     fmt: fmtSignedPP,
   },
   abs: {
