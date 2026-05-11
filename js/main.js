@@ -20,7 +20,7 @@ const fmtPct = d3.format(".1%");
 const fmtSignedPP = (v) => {
   const pp = v * 100;
   const sign = pp > 0 ? "+" : pp < 0 ? "−" : "";
-  return `${sign}${Math.abs(pp).toFixed(1)} pp`;
+  return `${sign}${Math.abs(pp).toFixed(1)}%`;
 };
 const fmtFit = (v) => v.toFixed(3);
 
@@ -47,7 +47,7 @@ const MODES = {
     domain: [-0.3, 0.3],
     yLabel: "House Dem share − citizen Dem share (pp)",
     legendClass: "",
-    legendLabels: ["−30pp (more Republican than voters)", "0", "+30pp (more Democratic than voters)"],
+    legendLabels: ["−30% (more Republican than voters)", "0", "+30% (more Democratic than voters)"],
     fmt: fmtSignedPP,
   },
   abs: {
@@ -417,7 +417,6 @@ function wireControls() {
 
   const slider = document.getElementById("seats-slider");
   const numberInput = document.getElementById("seats-number");
-  const pluralEl = document.getElementById("seats-plural");
 
   slider.min = 0;
   slider.max = breakpoints.length - 1;
@@ -427,7 +426,6 @@ function wireControls() {
   numberInput.max = breakpoints[breakpoints.length - 1];
 
   function applyThreshold() {
-    pluralEl.textContent = seatThreshold === 1 ? "" : "s";
     svg.selectAll("path.state").classed("muted", function () {
       const d = byFips[this.getAttribute("data-fips")];
       return d ? d.house_total < seatThreshold : false;
