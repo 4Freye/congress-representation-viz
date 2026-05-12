@@ -20,7 +20,7 @@ const fmtPct = d3.format(".1%");
 const fmtSignedPP = (v) => {
   const pp = v * 100;
   const sign = pp > 0 ? "+" : pp < 0 ? "−" : "";
-  return `${sign}${Math.abs(pp).toFixed(1)}%`;
+  return `${sign}${Math.abs(pp).toFixed(1)}pp`;
 };
 const fmtFit = (v) => v.toFixed(3);
 
@@ -45,9 +45,9 @@ const MODES = {
     label: "Party bias",
     color: biasColor,
     domain: [-0.3, 0.3],
-    yLabel: "House Dem share − citizen Dem share (pp)",
+    yLabel: "Voter Dem share − House Dem share (pp)",
     legendClass: "",
-    legendLabels: ["−30% (more Republican than voters)", "0", "+30% (more Democratic than voters)"],
+    legendLabels: ["+30pp (more Democratic than voters)", "0", "−30pp (more Republican than voters)"],
     fmt: fmtSignedPP,
   },
   abs: {
@@ -215,6 +215,7 @@ function renderLegend() {
     labels[1].textContent = cfg.legendLabels[1];
     labels[2].textContent = cfg.legendLabels[2];
   }
+  d3.select(".legend-note").style("display", mode === "bias" ? null : "none");
 }
 
 function renderScatter() {
@@ -232,8 +233,16 @@ function renderScatter() {
   const maxSeats = d3.max(states, (s) => s.house_total) || 52;
   const x = d3.scaleLinear().domain([0, maxSeats]).nice().range([0, innerW]);
 
+  // Bias mode plots −metric on y so positive = voters more Dem than seats (Rep skew, top).
+  // Other modes plot metric directly.
+  const yVal = (d) => {
+    const v = metric(d, mode);
+    if (v === null || Number.isNaN(v)) return v;
+    return mode === "bias" ? -v : v;
+  };
+
   // Data-driven y domain so dots aren't clipped by the map's color-scale clamp.
-  const vals = states.map((s) => metric(s, mode)).filter((v) => v !== null && !Number.isNaN(v));
+  const vals = states.map(yVal).filter((v) => v !== null && !Number.isNaN(v));
   let yDomain;
   if (mode === "bias") {
     const m = Math.max(Math.abs(d3.min(vals)), Math.abs(d3.max(vals)), 0.05);
@@ -257,7 +266,9 @@ function renderScatter() {
     .call(d3.axisBottom(x).ticks(8));
   g.append("g")
     .attr("class", "axis")
-    .call(d3.axisLeft(y).ticks(6).tickFormat(mode === "bias" ? (v) => `${(v*100).toFixed(0)}pp` : d3.format(".2f")));
+    .call(d3.axisLeft(y).ticks(6).tickFormat(mode === "bias"
+      ? (v) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v*100).toFixed(0)}pp`
+      : d3.format(".2f")));
 
   // axis labels
   g.append("text")
@@ -280,6 +291,12 @@ function renderScatter() {
     .attr("x1", 0).attr("x2", innerW)
     .attr("y1", y(refY)).attr("y2", y(refY))
     .attr("stroke", "#aaa").attr("stroke-dasharray", "2,3");
+  g.append("text")
+    .attr("class", "ref-label")
+    .attr("x", innerW - 4)
+    .attr("y", y(refY) - 4)
+    .attr("text-anchor", "end")
+    .text("perfectly proportional");
 
   // dots
   const plottable = states.filter((d) => metric(d, mode) !== null);
@@ -290,7 +307,7 @@ function renderScatter() {
     .classed("muted", (d) => d.house_total < seatThreshold)
     .classed("pinned", (d) => pinnedFips && byFips[pinnedFips.toString().padStart(2, "0")] && d.fips === byFips[pinnedFips.toString().padStart(2, "0")].fips)
     .attr("cx", (d) => x(d.house_total))
-    .attr("cy", (d) => y(metric(d, mode)))
+    .attr("cy", (d) => y(yVal(d)))
     .attr("r", 5)
     .attr("fill", (d) => cfg.color(metric(d, mode)))
     .on("mousemove", (event, d) => {
@@ -321,11 +338,12 @@ function renderNationalBar() {
   const root = d3.select("#national-bar");
   root.selectAll("*").remove();
 
-  const W = 600, H = 90;
-  const margin = { top: 8, right: 12, bottom: 8, left: 90 };
+  const W = 600, H = 130;
+  const margin = { top: 26, right: 12, bottom: 28, left: 90 };
   const barH = 26;
   const gap = 10;
   const innerW = W - margin.left - margin.right;
+  root.attr("viewBox", `0 0 ${W} ${H}`);
 
   const totals = states.reduce(
     (acc, s) => {
@@ -364,6 +382,23 @@ function renderNationalBar() {
 
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
+  // % scale ruler above the first bar (0/25/50/75/100)
+  const ticks = [0, 0.25, 0.5, 0.75, 1];
+  const tickG = g.append("g").attr("class", "scale");
+  ticks.forEach((t) => {
+    const xPos = t * innerW;
+    tickG.append("line")
+      .attr("x1", xPos).attr("x2", xPos)
+      .attr("y1", -6).attr("y2", -2)
+      .attr("stroke", "#bbb");
+    tickG.append("text")
+      .attr("class", "tick")
+      .attr("x", xPos)
+      .attr("y", -8)
+      .attr("text-anchor", t === 0 ? "start" : t === 1 ? "end" : "middle")
+      .text(`${Math.round(t * 100)}%`);
+  });
+
   rows.forEach((row, i) => {
     const yTop = i * (barH + gap);
     g.append("text")
@@ -395,18 +430,26 @@ function renderNationalBar() {
       xCursor += w;
     });
   });
+
+  g.append("text")
+    .attr("class", "footnote")
+    .attr("x", 0)
+    .attr("y", rows.length * (barH + gap) + 8)
+    .attr("dominant-baseline", "hanging")
+    .text("Gray = third-party / independent");
 }
 
 function wireControls() {
-  d3.selectAll(".mode-btn").on("click", function () {
+  d3.selectAll(".mode-btn").on("click", function (event) {
+    event.stopPropagation();
     const m = this.getAttribute("data-mode");
     if (!MODES[m] || m === mode) return;
     mode = m;
     d3.selectAll(".mode-btn").classed("is-active", function () {
       return this.getAttribute("data-mode") === mode;
     });
-    if (pinnedFips !== null) clearPin();
     renderAll();
+    refreshPinnedTooltip();
   });
 
   // Threshold values that actually change the picture: each distinct seat count
@@ -459,8 +502,7 @@ function wireControls() {
   });
 }
 
-function showTooltip(event, d) {
-  if (!d) return;
+function buildTooltipHTML(d) {
   const cfg = MODES[mode];
   const v = metric(d, mode);
   const devClass = mode === "bias"
@@ -489,27 +531,54 @@ function showTooltip(event, d) {
       ? `<div class="note">${vacant} vacant seat${vacant === 1 ? "" : "s"} (not counted).</div>`
       : "";
 
-  const otherStr = d.house_vote_other > 0.005
-    ? ` / ${fmtPct(d.house_vote_other)} O`
-    : "";
+  const voterO = d.house_vote_other > 0.005 ? fmtPct(d.house_vote_other) : "—";
+  const seatsHave = d.house_dem_share !== null;
+  const seatsD = seatsHave ? fmtPct(d.house_dem_share) : "n/a";
+  const seatsR = seatsHave ? fmtPct(d.house_rep_share) : "n/a";
+  const seatsO = seatsHave && d.house_total > 0
+    ? (d.house_ind > 0 ? fmtPct(d.house_ind / d.house_total) : "—")
+    : "—";
+  const countO = d.house_ind || 0;
 
   const metricRow = v === null
-    ? `<div class="row"><span>${cfg.label}:</span><span>n/a</span></div>`
-    : `<div class="row"><span>${cfg.label}:</span><span class="${devClass}">${cfg.fmt(v)}</span></div>`;
+    ? `<div class="metric"><span class="l">${cfg.label}:</span><span class="v">n/a</span></div>`
+    : `<div class="metric"><span class="l">${cfg.label}:</span><span class="v ${devClass}">${cfg.fmt(v)}</span></div>`;
 
-  tooltip
-    .classed("hidden", false)
-    .html(`
+  return `
       <div class="ttl">${d.name}</div>
-      <div class="row"><span>Voters (2024 House):</span><span>${fmtPct(d.house_vote_dem)} D / ${fmtPct(d.house_vote_rep)} R${otherStr}</span></div>
-      <div class="row"><span>House delegation:</span><span>${d.house_dem} D / ${d.house_rep} R${d.house_ind ? ` / ${d.house_ind} I` : ""} (${d.house_total})</span></div>
-      <div class="row"><span>House share:</span><span>${d.house_dem_share !== null ? fmtPct(d.house_dem_share) + " D / " + fmtPct(d.house_rep_share) + " R" : "n/a"}</span></div>
+      <div class="kv-grid">
+        <span class="h">&nbsp;</span><span class="h">D</span><span class="h">R</span><span class="h">O</span>
+        <span class="l">Voters</span>
+          <span class="v">${fmtPct(d.house_vote_dem)}</span>
+          <span class="v">${fmtPct(d.house_vote_rep)}</span>
+          <span class="v ${voterO === "—" ? "dim" : ""}">${voterO}</span>
+        <span class="l">Seats %</span>
+          <span class="v">${seatsD}</span>
+          <span class="v">${seatsR}</span>
+          <span class="v ${seatsO === "—" ? "dim" : ""}">${seatsO}</span>
+        <span class="l">Count</span>
+          <span class="v">${d.house_dem}</span>
+          <span class="v">${d.house_rep}</span>
+          <span class="v ${countO === 0 ? "dim" : ""}">${countO === 0 ? "—" : countO}</span>
+      </div>
+      <div class="total">Delegation: ${d.house_total} seat${d.house_total === 1 ? "" : "s"}</div>
       <div class="sep"></div>
       ${metricRow}
       ${note}${indNote}${vacantNote}
-    `);
+    `;
+}
 
+function showTooltip(event, d) {
+  if (!d) return;
+  tooltip.classed("hidden", false).html(buildTooltipHTML(d));
   positionTooltip(event);
+}
+
+function refreshPinnedTooltip() {
+  if (pinnedFips === null) return;
+  const d = byFips[String(pinnedFips).padStart(2, "0")];
+  if (!d) return;
+  tooltip.classed("hidden", false).html(buildTooltipHTML(d));
 }
 
 function positionTooltip(event) {
