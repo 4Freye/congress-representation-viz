@@ -59,7 +59,8 @@ def main() -> int:
 
     df = pd.read_csv(
         SRC,
-        usecols=["state_po", "office", "party_simplified", "candidate", "votes"],
+        usecols=["state_po", "office", "party_simplified", "party_detailed",
+                 "candidate", "votes", "mode", "county_name", "precinct"],
         dtype=str,
         low_memory=False,
     )
@@ -77,14 +78,34 @@ def main() -> int:
     df["votes"] = pd.to_numeric(df["votes"], errors="coerce").fillna(0).clip(lower=0).astype(int)
     df["party_simplified"] = df["party_simplified"].fillna("").str.upper().str.strip()
 
-    # Resolve each candidate to a single party at the (state, candidate) level
-    # — handles fusion-ticket / cross-endorsement rows (NY Conservative + R,
-    # Working Families + D; OR fusion ballots) where the same candidate has
-    # multiple party_simplified values across rows. Priority:
-    #   1. Manual override in candidate_party_2024.json
-    #   2. Dominant party_simplified by vote-weighted majority across the
-    #      candidate's D/R-tagged rows
-    #   3. OTHER (Libertarian, Green, independent, blank-without-map)
+    # De-duplicate mode rows. MEDSL precincts in NJ (and partially NY) report
+    # the same votes twice: once as mode=TOTAL and once split across mode
+    # breakdowns (ELECTION DAY / EARLY VOTING / MAIL-IN / PROVISIONAL). Summing
+    # all rows double-counts those precincts. For any
+    # (state, county, precinct, candidate, party_detailed) group that has BOTH
+    # a TOTAL row and breakdown rows, keep only the TOTAL row.
+    df["mode"] = df["mode"].fillna("").str.upper().str.strip()
+    df["county_name"] = df["county_name"].fillna("")
+    df["precinct"] = df["precinct"].fillna("")
+    df["party_detailed"] = df["party_detailed"].fillna("")
+    grp_keys = ["state_po", "county_name", "precinct", "candidate", "party_detailed"]
+    has_total = df.groupby(grp_keys)["mode"].transform(lambda s: (s == "TOTAL").any())
+    df = df[(~has_total) | (df["mode"] == "TOTAL")].copy()
+
+    # Resolve each ROW to a party bucket. Priority:
+    #   1. JSON map entry: human override applies to the candidate's entire
+    #      vote total (all rows). Used for state-quirk mis-labels (e.g., VT
+    #      tags all non-D candidates as OTHER; Mark Coester is mapped to
+    #      REPUBLICAN) and for fusion candidates whose Wikipedia state page
+    #      aggregates fusion-line votes into their major party (e.g., OR's
+    #      Andrea Salinas with Independent Party of Oregon endorsement).
+    #   2. No JSON entry: trust party_simplified row-level. This is the
+    #      fusion fix for states whose Wikipedia pages report fusion lines
+    #      as separate Other parties (e.g., NY Conservative/WFP). A fusion
+    #      candidate not in JSON keeps their major-party rows in D/R and
+    #      their fusion-line rows in OTHER.
+    #   3. Blank party_simplified + no JSON entry: vote-weighted dominant
+    #      D/R from the candidate's D/R rows, else OTHER.
     party_map_raw = json.loads(PARTY_MAP_PATH.read_text())
     party_map = {(s, c): p for s, candidates in party_map_raw.items()
                  if not s.startswith("_")
@@ -98,12 +119,18 @@ def main() -> int:
     else:
         dominant = {}
 
-    def resolve(state, cand):
-        if (state, cand) in party_map:
-            return party_map[(state, cand)]
-        return dominant.get((state, cand), "OTHER")
+    def resolve_row(state, cand, party_simp):
+        key = (state, cand)
+        if key in party_map:
+            return party_map[key]
+        if party_simp in ("DEMOCRAT", "REPUBLICAN", "OTHER"):
+            return party_simp
+        return dominant.get(key, "OTHER")
 
-    df["party_bucket"] = [resolve(s, c) for s, c in zip(df["state_po"], df["candidate"])]
+    df["party_bucket"] = [
+        resolve_row(s, c, p)
+        for s, c, p in zip(df["state_po"], df["candidate"], df["party_simplified"])
+    ]
 
     # Warn about blank-party candidates not covered by the manual map or by a
     # D/R reference row — they default to OTHER and may need a map entry.
