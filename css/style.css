@@ -26,13 +26,36 @@ header, main, footer { max-width: 1100px; margin: 0 auto; padding: 1rem 1.5rem; 
 header h1 { margin: 1rem 0 0.5rem; font-size: 1.9rem; }
 
 #intro p { margin: 0.6rem 0; }
-#intro .caveats { color: var(--muted); font-size: 0.92rem; }
+#intro .caveats {
+  color: var(--fg);
+  font-size: 0.9rem;
+  background: #fafafa;
+  border-left: 3px solid #c8c8c8;
+  padding: 0.55rem 0.85rem;
+  margin: 0.8rem 0;
+  border-radius: 0 4px 4px 0;
+}
+#intro .caveats strong { color: var(--fg); }
 #intro .dem { color: var(--dem); font-weight: 600; }
 #intro .rep { color: var(--rep); font-weight: 600; }
 #intro .good { color: var(--good); font-weight: 600; }
 #intro .bad { color: var(--bad); font-weight: 600; }
 #intro .mode-list { padding-left: 1.2rem; margin: 0.4rem 0 0.8rem; }
 #intro .mode-list li { margin: 0.35rem 0; }
+#intro .key { color: var(--muted); font-size: 0.92rem; margin: 0.4rem 0 0.8rem; }
+#intro .key .kbd {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--fg);
+  background: #f4f4f4;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 0.05rem 0.4rem;
+  margin: 0 0.1rem;
+  line-height: 1.2;
+}
 
 #map-container { margin-top: 1rem; }
 
@@ -100,6 +123,7 @@ header h1 { margin: 1rem 0 0.5rem; font-size: 1.9rem; }
 #scatter .axis line { stroke: #bbb; }
 #scatter .axis text { fill: var(--muted); font-size: 11px; }
 #scatter .axis-label { fill: var(--fg); font-size: 12px; }
+#scatter .ref-label { fill: #888; font-size: 10.5px; font-style: italic; }
 #scatter circle.dot {
   stroke: #fff;
   stroke-width: 1;
@@ -116,6 +140,8 @@ header h1 { margin: 1rem 0 0.5rem; font-size: 1.9rem; }
 
 #national-bar text { font-size: 11px; fill: #fff; font-variant-numeric: tabular-nums; }
 #national-bar text.label { fill: var(--fg); }
+#national-bar text.tick { fill: var(--muted); font-size: 10px; }
+#national-bar text.footnote { fill: var(--muted); font-size: 10.5px; font-style: italic; }
 
 #map {
   width: 100%;
@@ -128,10 +154,13 @@ header h1 { margin: 1rem 0 0.5rem; font-size: 1.9rem; }
   stroke: var(--stroke);
   stroke-width: 0.75;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, filter 0.15s ease;
 }
 
-#map path.state:hover,
+#map path.state:hover {
+  filter: brightness(1.18) saturate(1.15) drop-shadow(0 0 2px rgba(255,255,255,0.6));
+}
+
 #map path.state.pinned {
   stroke: var(--stroke-hover);
   stroke-width: 1.5;
@@ -149,9 +178,9 @@ header h1 { margin: 1rem 0 0.5rem; font-size: 1.9rem; }
   border-radius: 6px;
   background: linear-gradient(
     to right,
-    #67001f, #b2182b, #d6604d, #f4a582, #fddbc7,
+    #053061, #2166ac, #4393c3, #92c5de, #d1e5f0,
     #f7f7f7,
-    #d1e5f0, #92c5de, #4393c3, #2166ac, #053061
+    #fddbc7, #f4a582, #d6604d, #b2182b, #67001f
   );
 }
 
@@ -179,6 +208,13 @@ header h1 { margin: 1rem 0 0.5rem; font-size: 1.9rem; }
   margin-top: 0.3rem;
 }
 
+.legend-note {
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
+
 #tooltip {
   position: fixed;
   pointer-events: none;
@@ -188,16 +224,37 @@ header h1 { margin: 1rem 0 0.5rem; font-size: 1.9rem; }
   border-radius: 6px;
   font-size: 0.88rem;
   line-height: 1.4;
-  max-width: 260px;
+  max-width: 320px;
   z-index: 10;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
 #tooltip.hidden { display: none; }
 
-#tooltip .ttl { font-weight: 700; font-size: 1rem; margin-bottom: 0.35rem; }
-#tooltip .row { display: flex; justify-content: space-between; gap: 0.75rem; }
-#tooltip .row span:last-child { font-variant-numeric: tabular-nums; }
+#tooltip .ttl { font-weight: 700; font-size: 1rem; margin-bottom: 0.4rem; }
+#tooltip .kv-grid {
+  display: grid;
+  grid-template-columns: auto repeat(3, 1fr);
+  column-gap: 0.85rem;
+  row-gap: 0.18rem;
+  font-variant-numeric: tabular-nums;
+  align-items: baseline;
+}
+#tooltip .kv-grid .h {
+  color: #bbb;
+  font-size: 0.75rem;
+  text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 0.15rem;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+#tooltip .kv-grid .l { color: #ddd; }
+#tooltip .kv-grid .v { text-align: right; }
+#tooltip .kv-grid .v.dim { color: #777; }
+#tooltip .total { color: #bbb; font-size: 0.78rem; margin-top: 0.35rem; text-align: right; }
+#tooltip .metric { display: flex; justify-content: space-between; gap: 0.75rem; }
+#tooltip .metric .v { font-variant-numeric: tabular-nums; font-weight: 600; }
 #tooltip .sep { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.4rem 0; }
 #tooltip .dev-pos { color: #92c5de; }
 #tooltip .dev-neg { color: #f4a582; }
