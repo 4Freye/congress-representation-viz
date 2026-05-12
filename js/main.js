@@ -540,9 +540,10 @@ function buildTooltipHTML(d) {
     : "—";
   const countO = d.house_ind || 0;
 
+  const displayV = mode === "bias" ? -v : v;
   const metricRow = v === null
     ? `<div class="metric"><span class="l">${cfg.label}:</span><span class="v">n/a</span></div>`
-    : `<div class="metric"><span class="l">${cfg.label}:</span><span class="v ${devClass}">${cfg.fmt(v)}</span></div>`;
+    : `<div class="metric"><span class="l">${cfg.label}:</span><span class="v ${devClass}">${cfg.fmt(displayV)}</span></div>`;
 
   return `
       <div class="ttl">${d.name}</div>
