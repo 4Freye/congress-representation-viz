@@ -13,3 +13,4 @@ test-results/
 data/raw/2024-house-precinct.csv
 
 notebooks/
+.vercel

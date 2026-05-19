@@ -1,0 +1,11 @@
+data/raw/
+data/*.py
+data/__pycache__/
+node_modules/
+playwright-report/
+test-results/
+test/
+notebooks/
+pyproject.toml
+uv.lock
+.venv/
