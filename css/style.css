@@ -36,6 +36,10 @@ header h1 { margin: 1rem 0 0.5rem; font-size: 1.9rem; }
   border-radius: 0 4px 4px 0;
 }
 #intro .caveats strong { color: var(--fg); }
+#intro ul.caveats { padding-left: 1.8rem; }
+#intro ul.caveats li { margin: 0.25rem 0; }
+#intro p.caveats + ul.caveats { margin-top: -0.6rem; border-top: none; border-radius: 0 0 4px 0; }
+#intro p.caveats { margin-bottom: 0; border-radius: 0 4px 0 0; }
 #intro .dem { color: var(--dem); font-weight: 600; }
 #intro .rep { color: var(--rep); font-weight: 600; }
 #intro .good { color: var(--good); font-weight: 600; }
